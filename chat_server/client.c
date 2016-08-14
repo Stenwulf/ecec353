@@ -22,14 +22,18 @@ int main(int argc, char *argv[]){
    int i;
    int j;
 
-   char groupID[MESSAGE_SIZE];
-   char clientID[MESSAGE_SIZE];
+   char* groupID;
+   char* clientID;
 
    if (argc != 3) {
-      fprintf(stderr,"The program must have 2 arguments (groupId and userName).\n");      
-      exit(1)
+      fprintf(stderr,"The program must have 2 arguments (groupID and clientID).\n");      
+      exit(1);
    }
    else {
-      groupId = argv[1]
-      userName = argv[2]
+      groupID = argv[1];
+      clientID = argv[2];
    }
+   
+   return 0;
+   
+}
