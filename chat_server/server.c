@@ -81,7 +81,7 @@ int main(int argc, char **argv){
    //    SERVER_PIPE is defined in "chat.h"
 
    if(stat(SERVER_PIPE, &st) != 0){
-      mkfifo(SERVER_PIPE, 666); 
+      mkfifo(SERVER_PIPE, S_PIPE_PERMISSIONS); 
    }
 
    // ---- Testing -----

@@ -22,6 +22,9 @@ int main(int argc, char *argv[]){
    int i;
    int j;
 
+   char groupID[MESSAGE_SIZE];
+   char clientID[MESSAGE_SIZE];
+
    if (argc != 3) {
       fprintf(stderr,"The program must have 2 arguments (groupId and userName).\n");      
       exit(1)
