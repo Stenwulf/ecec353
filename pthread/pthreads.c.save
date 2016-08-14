@@ -1,0 +1,56 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
+
+#define LEFT_ENDPOINT 5
+#define RIGHT_ENDPOINT 1000
+#define NUM_TRAPEZOIDS 100000000
+#define NUM_THREADS 4
+
+/* Computes Value of Function to be Integrated */
+__attribute__((const)) float func(float x)
+{
+	return (x+1)/sqrt(x*x + x + 1);
+}
+
+double compute_gold(float, float, int, float (*)(float));
+double compute_using_pthreads(float, float, int, float (*)(float));
+
+int main()
+{
+	int n = NUM_TRAPEZOIDS;
+	float a = LEFT_ENDPOINT;
+	float b = RIGHT_ENDPOINT;
+
+	double reference = compute_gold(a, b, n, func);
+	printf("Reference Solution Computed On The CPU = %f \n", reference);
+
+	double pthreads_result = compute_using_pthreads(a , b, n, func);
+	printf("Solution Computed Using PThreads = %f \n", pthread_result);
+}
+
+double compute_gold(float a, float b, int n, float(*f)(float))
+{
+	float h = (b-a)/(float)n;	// Height of trapezoid
+
+	double integral = (f(a) + f(b))/2.0;
+	
+	for(int k = 1; k <= n-1; k++)
+	{
+		integral += f(a+k*h);
+	}
+	integral = integral*h;
+	return integral;
+}
+
+double compute_using_pthreads(float a, float b, int n, float(*f)(float))
+{
+	float h1 = (b-a)/(float)n;
+	double integral = (f(a)+f(b))/2.0;
+
+	
+	return 0.0;
+}
