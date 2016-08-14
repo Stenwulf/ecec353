@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <string.h>
 
 #include "chat.h"
 
@@ -30,6 +31,7 @@
  *
  */
 
+void print_commands();
 
 int main(int argc, char **argv){
  
@@ -97,9 +99,16 @@ int main(int argc, char **argv){
       }
    } 
 
+   
+
+   // Set server status to run and print commands
    server_status = 1;
+   print_commands();   
+
+   // Main While Loop
    while(server_status){
-         
+
+      // Check for commands
       if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
 
          // Exit Command
@@ -109,8 +118,9 @@ int main(int argc, char **argv){
          }
          fflush(stdin);
       }
-      
    }
+
+   
 
    // ---- Testing -----
    struct group_context test_context;
@@ -129,4 +139,10 @@ int main(int argc, char **argv){
 
 
    return 0;
+
+}
+
+void print_commands(){
+   printf("\n\nCommand List:\n");
+   printf("/exit -- Exits the server\n");
 }
