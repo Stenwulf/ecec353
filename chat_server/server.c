@@ -14,6 +14,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "chat.h"
 
@@ -21,14 +23,12 @@
 #define GROUP_MAX 10
 #define PEER_MAX 10
 
-/* 8/13/16
- * Group Usage ID is not intializing to 0 correctly
- *
- * Client List Works
- * Group Members Works
+/* 
+ * Server Command Definitons can be found in chat.h
  * 
- *
- *
+ * Server Status List
+ *    0 - Server Stopped
+ *    1 - Server Running
  */
 
 void print_commands();
@@ -41,14 +41,16 @@ int main(int argc, char **argv){
  
    // Initalize Status Indicators
    int status; 
-   // Server Status
-   //    Exit = 0
-   //    Run = 1
-   //    Error = -1
    int server_status;
-   struct stat st;
 
+   struct stat st;
+   dev_t dev;
+
+   // Intialize Characters
    char command_line[MESSAGE_SIZE];
+
+   // Initialize Files
+   FILE* server_fifo;
 
    // Intialize Client List Array
    //    Can be accessed using standard array notatiom
@@ -92,7 +94,8 @@ int main(int argc, char **argv){
    //    SERVER_PIPE is defined in "chat.h"
 
    if(stat(SERVER_PIPE, &st) != 0){
-      status = mkfifo(SERVER_PIPE, S_PIPE_PERMISSIONS);
+      //unlink(SERVER_PIPE);
+      status = mkfifo(SERVER_PIPE, 0666);
       if(status != 0){
          printf("Error: Server Pipe could not be created.\n");
          return -1;
@@ -105,6 +108,13 @@ int main(int argc, char **argv){
    server_status = 1;
    print_commands();   
 
+   //server_fifo = (FILE*)open(SERVER_PIPE, O_RDONLY);
+   if(server_fifo == NULL){
+      printf("Failed to open file.\n");
+   }
+   
+   server_fifo = fopen(SERVER_PIPE, "r+");
+  
    // Main While Loop
    while(server_status){
 
@@ -112,10 +122,23 @@ int main(int argc, char **argv){
       if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
 
          // Exit Command
-         if(strcmp(S_COMMAND_EXIT,command_line) == 0){
+         if(strncmp(S_COMMAND_EXIT,command_line, 5) == 0){
             printf("Closing Server.\n");
             server_status = 0;
+            unlink(SERVER_PIPE);
          }
+         
+         // Help Command
+         if(strncmp(S_COMMAND_HELP,command_line, 5) == 0){
+            print_commands();
+         }
+
+         if(strncmp(S_COMMAND_READ, command_line, 5) == 0){
+            fread(command_line, sizeof(command_line), 1, server_fifo);
+            printf("Command Received: %s\n",command_line);
+         }
+
+         
          fflush(stdin);
       }
    }
@@ -142,7 +165,13 @@ int main(int argc, char **argv){
 
 }
 
+// Print Commands
+//    Prints a list of the server commands
 void print_commands(){
+
    printf("\n\nCommand List:\n");
+   printf("/help -- Prints this list of commands\n");
    printf("/exit -- Exits the server\n");
+
+   return;
 }
