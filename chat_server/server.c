@@ -36,8 +36,17 @@ int main(int argc, char **argv){
    // Initialize loop iterators
    int i;
    int j;
-
+ 
+   // Initalize Status Indicators
+   int status; 
+   // Server Status
+   //    Exit = 0
+   //    Run = 1
+   //    Error = -1
+   int server_status;
    struct stat st;
+
+   char command_line[MESSAGE_SIZE];
 
    // Intialize Client List Array
    //    Can be accessed using standard array notatiom
@@ -81,7 +90,23 @@ int main(int argc, char **argv){
    //    SERVER_PIPE is defined in "chat.h"
 
    if(stat(SERVER_PIPE, &st) != 0){
-      mkfifo(SERVER_PIPE, S_PIPE_PERMISSIONS); 
+      status = mkfifo(SERVER_PIPE, S_PIPE_PERMISSIONS);
+      if(status != 0){
+         printf("Error: Server Pipe could not be created.\n");
+         return -1;
+      }
+   } 
+
+   server_status = 1;
+   while(server_status){
+         
+      if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
+         if(strcmp(S_COMMAND_EXIT,command_line) == 0){
+            printf("Closing Server.\n");
+            server_status = 0;
+         }
+      }
+      
    }
 
    // ---- Testing -----
@@ -97,6 +122,8 @@ int main(int argc, char **argv){
    free(client_list);
    free(group_usage);
    //free(group_members);
+
+
 
    return 0;
 }
