@@ -1,0 +1,8 @@
+if [ -f "client" ]
+then
+        rm client
+fi
+
+gcc -o chat_server client.c chat.h -std=c99 -lpthread
+
+./client
