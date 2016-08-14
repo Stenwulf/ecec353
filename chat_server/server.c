@@ -101,10 +101,13 @@ int main(int argc, char **argv){
    while(server_status){
          
       if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
+
+         // Exit Command
          if(strcmp(S_COMMAND_EXIT,command_line) == 0){
             printf("Closing Server.\n");
             server_status = 0;
          }
+         fflush(stdin);
       }
       
    }

@@ -6,7 +6,7 @@
 #define SERVER_PIPE "/tmp/severfifo"
 #define S_PIPE_PERMISSIONS 666
 
-#define S_COMMAND_EXIT "/exit"
+#define S_COMMAND_EXIT "/exit\n"
 // Group Context
 //    group_id - Containts the group id that the client will connect to
 //    client_id - Name/ID of the client that is connecting to the group
