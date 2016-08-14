@@ -3,6 +3,8 @@
 
 
 #define MESSAGE_SIZE 1024
+#define SERVER_PIPE "/tmp/severfifo"
+#define S_PIPE_PERMISSIONS 666
 
 // Group Context
 //    group_id - Containts the group id that the client will connect to

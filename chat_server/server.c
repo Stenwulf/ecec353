@@ -1,4 +1,5 @@
 /******************************************
+ * q
  * Chat Server
  *
  * Erick Weigel
@@ -10,14 +11,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "chat.h"
 
 #define CLIENT_MAX 10
 #define GROUP_MAX 10
 #define PEER_MAX 10
-
-
 
 /* 8/13/16
  * Group Usage ID is not intializing to 0 correctly
@@ -30,17 +31,13 @@
  */
 
 
-
-
-
-
-
-
 int main(int argc, char **argv){
  
    // Initialize loop iterators
    int i;
    int j;
+
+   struct stat st;
 
    // Intialize Client List Array
    //    Can be accessed using standard array notatiom
@@ -79,8 +76,15 @@ int main(int argc, char **argv){
       }
    }
 
-   
+   // Setup FIFO File as a pipe if it doesn't exist
+   //    Defines a new special file in a temp directory
+   //    SERVER_PIPE is defined in "chat.h"
 
+   if(stat(SERVER_PIPE, &st) != 0){
+      mkfifo(SERVER_PIPE, 666); 
+   }
+
+   // ---- Testing -----
    struct group_context test_context;
    test_context.group_id = "teststring\n";
    if(group_usage[0] == 0){
