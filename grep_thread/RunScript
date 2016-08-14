@@ -1,0 +1,24 @@
+#!/bin/bash
+if [ -f "mini_grep" ]
+then
+        rm mini_grep
+fi
+
+gcc -o mini_grep mini_grep.c queue_utils.c -std=c99 -lpthread 
+
+./mini_grep lui /home/DREXEL/mdl45/ 2 static
+#sleep 0.2
+./mini_grep lui /home/DREXEL/mdl45/ 4 static
+#./mini_grep faia /home/DREXEL/ekw47/ 4 static
+#./mini_grep faia /home/DREXEL/ekw47/ 6 static
+#./mini_grep faia /home/DREXEL/ekw47/ 8 static
+#./mini_grep faia /home/DREXEL/ekw47/ 16 static
+
+
+#./mini_grep lui /home/DREXEL/mdl45/ 2 dynamic
+#sleep 0.5
+./mini_grep lui /home/DREXEL/mdl45/ 2 dynamic
+./mini_grep lui /home/DREXEL/mdl45/ 4 dynamic
+#./mini_grep faia /home/DREXEL/ekw47/ 6 dynamic
+#./mini_grep faia /home/DREXEL/ekw47/ 8 dynamic
+#./mini_grep faia /home/DREXEL/ekw47/ 16 dynamic
