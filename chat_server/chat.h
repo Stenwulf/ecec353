@@ -9,9 +9,10 @@
 #define S_COMMAND_EXIT       "/exit"
 #define S_COMMAND_HELP       "/help"
 #define S_COMMAND_READ       "/read"
+#define S_CLIENT_GROUP       "g"
 
-#define C_COMMAND_EXIT       "/exit"
-#define C_COMMAND_GROUP      "/group"
+#define C_COMMAND_EXIT       "/x"
+#define C_COMMAND_GROUP      "/g"
 
 // Group Context
 //    group_id - Containts the group id that the client will connect to

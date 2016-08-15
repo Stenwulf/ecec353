@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -32,6 +33,9 @@
  */
 
 void print_commands();
+int connect_ServerPipe();
+fd_set set_FileSelect_Server(int filedesc);
+fd_set set_FileSelect_STDIN();
 
 int main(int argc, char **argv){
  
@@ -42,11 +46,21 @@ int main(int argc, char **argv){
    // Initalize Status Indicators
    int status; 
    int server_status;
+   int server_read;
+   int stdin_read;
 
    struct stat st;
 
+   // Select Parameters
+   fd_set s_read_set;
+   fd_set stdin_set;
+   fd_set write_set;
+
+   struct timeval read_timeout;
+   
    // Intialize Characters
-   char command_line[MESSAGE_SIZE];
+	char* command_line = (char*)calloc(MESSAGE_SIZE, sizeof(char));
+   char* fifo_pipe = (char*)calloc(MESSAGE_SIZE, sizeof(char));
 
    // Initialize Files
    int server_fifo;
@@ -91,7 +105,6 @@ int main(int argc, char **argv){
    //    SERVER_PIPE is defined in "chat.h"
 
    if(stat(SERVER_PIPE, &st) != 0){
-      //unlink(SERVER_PIPE);
       status = mkfifo(SERVER_PIPE, 0666);
       if(status != 0){
          printf("Error: Server Pipe could not be created.\n");
@@ -102,32 +115,56 @@ int main(int argc, char **argv){
       }
    } 
 
+   // Connect to reading end of the server pipe
+   server_fifo = connect_ServerPipe();
+   printf("FIFO File Descripter: %d\n",server_fifo); 
+   // Setup Select Parameters
+   read_timeout.tv_sec = 0;
+   read_timeout.tv_usec = 10000;
+
+   /*FD_ZERO(&s_read_set);
+   FD_SET(server_fifo, &s_read_set);*/
+
+//   s_read_set = set_FileSelect_Server(server_fifo);
+
    // Set server status to run and print commands
    server_status = 1;
    print_commands();   
-
-
-   server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_RDONLY);
-   if(server_fifo < 1){
-      printf("Error opening pipe.");
-   }
  
    // Main While Loop
    while(server_status){
+      
+      s_read_set = set_FileSelect_Server(server_fifo);
+      server_read = select(server_fifo + 1, &s_read_set, NULL, NULL, &read_timeout);
 
-      // Check for commands
-      if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
+      if(FD_ISSET(server_fifo, &s_read_set)){
+         read(server_fifo, command_line, MESSAGE_SIZE*sizeof(command_line));
+         printf("Read: %s\n", command_line);
+         memset(command_line, 0, MESSAGE_SIZE);
+      }
+     
 
+      // STDIN Select for Input 
+      stdin_set = set_FileSelect_STDIN();
+      stdin_read = select(STDIN_FILENO + 1, &stdin_set, NULL, NULL, &read_timeout);
+      // Check for commands from STDIN
+      if(FD_ISSET(STDIN_FILENO, &stdin_set)){
+         
+         fgets(command_line, MESSAGE_SIZE, stdin);
          // Exit Command
          if(strncmp(S_COMMAND_EXIT,command_line, 5) == 0){
             printf("Closing Server.\n");
             server_status = 0;
+            // Destroy Pipe
             close(server_fifo);
             unlink(SERVER_PIPE);
+            // Free MALLOCs
+            free(command_line);
+            free(fifo_pipe);
          }
          
          // Help Command
-         if(strncmp(S_COMMAND_HELP,command_line, 5) == 0){
+         if(strncmp(S_COMMAND_HELP,command_line, strlen(S_COMMAND_HELP)) == 0){
             print_commands();
          }
 
@@ -136,13 +173,14 @@ int main(int argc, char **argv){
 
             printf("File Opened\n");
             memset(command_line, 0 , MESSAGE_SIZE);
-            read(server_fifo, command_line, sizeof(command_line));
+            read(server_fifo, command_line, MESSAGE_SIZE*sizeof(command_line));
             printf("Command: %s\n", command_line);
          }
-
          
          fflush(stdin);
       }
+     
+     
    }
 
    
@@ -179,4 +217,33 @@ void print_commands(){
 
 }
 
+int connect_ServerPipe(){
+   int val;
+   val = open(SERVER_PIPE, O_NONBLOCK | O_RDONLY);
+   if(val < 1){
+      printf("Error opening pipe.");
+   }
+   return val;
+}
 
+// Creates a file descriptor set to check server fifo for reading
+fd_set set_FileSelect_Server(int filedesc){
+
+   fd_set fds;
+
+   FD_ZERO(&fds);
+   FD_SET(filedesc, &fds);
+
+   return fds;
+}
+
+// Creates a file descriptor set to check STDIN for input
+fd_set set_FileSelect_STDIN(){
+
+   fd_set fds;
+
+   FD_ZERO(&fds);
+   FD_SET(STDIN_FILENO, &fds);
+
+   return fds;
+}
