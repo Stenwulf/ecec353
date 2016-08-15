@@ -45,6 +45,7 @@ int main(int argc, char *argv[]){
    char* clientID;
    char command_line[MESSAGE_SIZE];
 
+   char message_header[MESSAGE_SIZE];
    char message[MESSAGE_SIZE]; 
 
    int server_fifo;
@@ -110,7 +111,13 @@ int main(int argc, char *argv[]){
                printf("Error opening pipe.\n");
             }
             else{
-               prepend(command_line,"/t ");
+               strcat(message_header,"/t /F ");
+               strcat(message_header,clientID);
+               strcat(message_header," /G ");
+               strcat(message_header, groupID);
+               strcat(message_header," ");
+
+               prepend(command_line,message_header);
                write(server_fifo, &command_line, sizeof(command_line));
                printf("Wrote to file.\n");
                close(server_fifo);

@@ -35,6 +35,20 @@
 
 void print_commands();
 
+void prepend(char* s, const char* t)
+{
+    size_t len = strlen(t);
+    size_t i;
+
+    memmove(s + len, s, strlen(s) + 1);
+
+    for (i = 0; i < len; ++i)
+    {
+        s[i] = t[i];
+    }
+}
+
+
 int main(int argc, char **argv){
  
    // Initialize loop iterators
@@ -217,27 +231,49 @@ int main(int argc, char **argv){
                }
                else if(strcmp("/t", token_ptr) == 0){
                   token_ptr = strtok(NULL, " ,");
-                  if(strcmp("/w", token_ptr) == 0){
+                  char FromUser[MESSAGE_SIZE];
+                  char SentGroup[MESSAGE_SIZE];
+
+
+                  token_ptr = strtok(NULL, " ,");
+                  strcpy(FromUser, token_ptr);
+
+                  token_ptr = strtok(NULL, " ,");
+                  strcpy(SentGroup, token_ptr);
+
+                  token_ptr = strtok(NULL, " ,");
+
+                  if(strcmp("-w", token_ptr) == 0){
                     //WRITE FUNCTION TO HANDLE WHISPER
                     //Need to delete last element and handle "blank" msgs
                      token_ptr = strtok(NULL, " ,");
-                     char* ToUser;
+                     char ToUser[MESSAGE_SIZE];
+                     int flag_length;
+
                      strcpy(ToUser, token_ptr);
-                     token_ptr = strtok(NULL, " ,");
-                     while( token_ptr!= NULL){
-                        strcpy(New_Message, token_ptr);
-                        strcpy(" ", token_ptr);
-                        token_ptr = strtok(NULL, " ,");
+                     flag_length = strlen(ToUser)+7;
+                     memcpy(NewMessage, &command_line[flag_length], sizeof(command_line));
+                     NewMessage[sizeof(command_line)] = '\0';
+                     
+
+
+                     //prepend(NewMessage, "/f " );              
+                     //prepend(NewMessage,  );              
+                     //prepend(NewMessage,  );              
+
+                     for(i = 0; i < CLIENT_MAX; i++){
+                        if(strcmp(client_list[i],ToUser)==0){
+                           //write(
+                        }
+                     }
                      }
                   }
                   else
                   {
-                        memcpy(NewMessage, &command_line[3], sizeof(command_line));
-                        NewMessage[sizeof(command_line)] = '\0';
+                     memcpy(NewMessage, &command_line[3], sizeof(command_line));
+                     NewMessage[sizeof(command_line)] = '\0';
                   }
  
-                  }
-                 
                token_ptr = strtok(NULL, " ,");
             }
       }
