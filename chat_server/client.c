@@ -82,8 +82,6 @@ int main(int argc, char *argv[]){
 
    client_status = 1;
 
-   while(client_status){
-
       server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_WRONLY);
       if(server_fifo < 0){
          printf("The server is not currently online, exiting.\n");
@@ -95,6 +93,9 @@ int main(int argc, char *argv[]){
          close(server_fifo);
       }
 
+
+
+   while(client_status){
 
       if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
 

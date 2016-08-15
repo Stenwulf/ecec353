@@ -51,6 +51,7 @@ int main(int argc, char **argv){
 
    // Intialize Characters
    char command_line[MESSAGE_SIZE];
+   char NewMessage[MESSAGE_SIZE];
 
    // Initialize Files
    FILE* server_fifo;
@@ -128,18 +129,14 @@ int main(int argc, char **argv){
    
    server_fifo = fopen(SERVER_PIPE, "r+");
  
-   j =0;
- 
    // Main While Loop
    while(server_status){
+//      struct pollfd mypoll = {STDIN_FILENO, POLLIN|POLLPRI};
+//      if(poll(&mypoll, 2, 1000))
 
-      struct pollfd mypoll = {STDIN_FILENO, POLLIN|POLLPRI};
-      if(poll(&mypoll, 2, 1000))
+      if(fgets(command_line, MESSAGE_SIZE, stdin)!= NULL)
       {
-         printf("CYCLES WRITE: %d\n", j);
          // Check for commands
-         fgets(command_line, MESSAGE_SIZE, stdin);
-
             // Exit Command
             if(strncmp(S_COMMAND_EXIT,command_line, 5) == 0){
                printf("Closing Server.\n");
@@ -154,10 +151,10 @@ int main(int argc, char **argv){
             }
 
             fflush(stdin);
-      }
-      else
-      {
-         printf("CYCLES READ: %d\n", j);
+     // }
+     // else
+     // {
+
             fread(command_line, sizeof(command_line), 1, server_fifo);
             printf("Command Received: %s\n",command_line);
 
@@ -172,7 +169,6 @@ int main(int argc, char **argv){
             strcpy(cmd_line_split, command_line);
             
             token_ptr = strtok(cmd_line_split," ");
-            printf("TP: %s\n", token_ptr);
 
             struct group_context Group1;
 
@@ -220,8 +216,7 @@ int main(int argc, char **argv){
                  
                }
                else if(strcmp("/t", token_ptr) == 0){
-                  printf("%s\n",command_line);
-                  token_ptr = strtok(NULL, " ");
+                  token_ptr = strtok(NULL, " ,");
                   if(strcmp("/w", token_ptr) == 0){
                     //WRITE FUNCTION TO HANDLE WHISPER
                     //Need to delete last element and handle "blank" msgs
@@ -237,20 +232,15 @@ int main(int argc, char **argv){
                   }
                   else
                   {
-                     while( token_ptr!= NULL){
-                        strcpy(New_Message, token_ptr);
-                        strcpy(" ", token_ptr);
-                        token_ptr = strtok(NULL, " ,");
-                     }
+                        memcpy(NewMessage, &command_line[3], sizeof(command_line));
+                        NewMessage[sizeof(command_line)] = '\0';
+                  }
  
                   }
                  
-               }
                token_ptr = strtok(NULL, " ,");
             }
-         	 
       }
-   j++;
    }
    // ---- Testing -----
    struct group_context test_context;
