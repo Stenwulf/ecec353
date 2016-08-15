@@ -56,8 +56,6 @@ int main(int argc, char **argv){
    //       client_list[i] = "somestring"
    //
    //    Overwritting an array location is allowed
- 
-
    char **client_list = (char**)calloc(CLIENT_MAX, sizeof(char*));
    for(i = 0; i < CLIENT_MAX; i++){
       client_list[i] = (char*)calloc(MESSAGE_SIZE, sizeof(char*));
@@ -133,14 +131,13 @@ int main(int argc, char **argv){
             print_commands();
          }
 
+         // Read Command
          if(strncmp(S_COMMAND_READ, command_line, 5) == 0){
-
 
             printf("File Opened\n");
             memset(command_line, 0 , MESSAGE_SIZE);
             read(server_fifo, command_line, sizeof(command_line));
             printf("Command: %s\n", command_line);
-            close(server_fifo);
          }
 
          
@@ -177,6 +174,9 @@ void print_commands(){
    printf("\n\nCommand List:\n");
    printf("/help -- Prints this list of commands\n");
    printf("/exit -- Exits the server\n");
-
+   printf("/read -- Test Command :: Read Line from FIFO\n");
    return;
+
 }
+
+

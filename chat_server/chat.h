@@ -27,17 +27,22 @@ struct group_context{
 // Message
 //    client_id - Name/ID of the client that is sending the message
 //    message_text - THe contents of the message being sent
-//
-//    peer_flag - Flag to indicate if the message should be a whisper
 
 struct message_struct{
 
    char* client_id;
    char* message_text;
 
-   int peer_flag;
-
 };
 
+// Command Token
+//    command - the command from the message
+//    contents - the value of the command
+
+struct command_token{
+   
+   char* command;
+   char* contents;
+};
 
 #endif
