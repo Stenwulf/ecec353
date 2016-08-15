@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
    char* clientID;
    char command_line[MESSAGE_SIZE];
 
-   char message[MESSAGE_SIZE] = "TestMessage\n";
+   char message[MESSAGE_SIZE] = "/g coolgroup /u userName\n";
 
    int server_fifo;
 
