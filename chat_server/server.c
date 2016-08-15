@@ -44,13 +44,12 @@ int main(int argc, char **argv){
    int server_status;
 
    struct stat st;
-   dev_t dev;
 
    // Intialize Characters
    char command_line[MESSAGE_SIZE];
 
    // Initialize Files
-   FILE* server_fifo;
+   int server_fifo;
 
    // Intialize Client List Array
    //    Can be accessed using standard array notatiom
@@ -100,21 +99,16 @@ int main(int argc, char **argv){
          printf("Error: Server Pipe could not be created.\n");
          return -1;
       }
+      else{
+         printf("Pipe Opened");
+      }
    } 
-
-   
 
    // Set server status to run and print commands
    server_status = 1;
    print_commands();   
 
-   //server_fifo = (FILE*)open(SERVER_PIPE, O_RDONLY);
-   if(server_fifo == NULL){
-      printf("Failed to open file.\n");
-   }
-   
-   server_fifo = fopen(SERVER_PIPE, "r+");
-  
+   server_fifo = open(SERVER_PIPE, O_NONBLOCK |  O_RDONLY);
    // Main While Loop
    while(server_status){
 
@@ -125,6 +119,7 @@ int main(int argc, char **argv){
          if(strncmp(S_COMMAND_EXIT,command_line, 5) == 0){
             printf("Closing Server.\n");
             server_status = 0;
+            close(server_fifo);
             unlink(SERVER_PIPE);
          }
          
@@ -134,8 +129,16 @@ int main(int argc, char **argv){
          }
 
          if(strncmp(S_COMMAND_READ, command_line, 5) == 0){
-            fread(command_line, sizeof(command_line), 1, server_fifo);
-            printf("Command Received: %s\n",command_line);
+
+
+            if(server_fifo < 1){
+               printf("Error opening pipe.");
+            }
+            printf("File Opened\n");
+            memset(command_line, 0 , MESSAGE_SIZE);
+            read(server_fifo, command_line, sizeof(command_line));
+            printf("Command: %s\n", command_line);
+            close(server_fifo);
          }
 
          

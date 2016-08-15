@@ -12,6 +12,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "chat.h"
 
@@ -26,11 +31,11 @@ int main(int argc, char *argv[]){
 
    char* groupID;
    char* clientID;
+   char* command_line;
 
-   char command_line[MESSAGE_SIZE];
-   char message[] = "TestMessage\n";
+   char message[MESSAGE_SIZE] = "TestMessage\n";
 
-   FILE* server_fifo;
+   int server_fifo;
 
 
 
@@ -44,8 +49,7 @@ int main(int argc, char *argv[]){
    }
   
    client_status = 1;
-   server_fifo = fopen(SERVER_PIPE, "w");
-   
+
    while(client_status){
    
       if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
@@ -57,10 +61,15 @@ int main(int argc, char *argv[]){
          }
          
          if(strncmp(C_COMMAND_GROUP,command_line, 5) == 0){
-            printf("Writing Line.\n");
-   //         server_fifo = open(SERVER_PIPE, "w");
-            fwrite(message, sizeof(message), 1, server_fifo);
-    //        close(server_fifo);
+
+            server_fifo = open(SERVER_PIPE, O_WRONLY);
+            if(server_fifo < 0){
+               printf("Error opening pipe.\n");
+            }
+
+            write(server_fifo, message, sizeof(message));
+            printf("Wrote to file.\n");
+            close(server_fifo);
          }
 
       } 
