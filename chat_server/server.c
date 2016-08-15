@@ -108,7 +108,12 @@ int main(int argc, char **argv){
    server_status = 1;
    print_commands();   
 
-   server_fifo = open(SERVER_PIPE, O_NONBLOCK |  O_RDONLY);
+
+   server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_RDONLY);
+   if(server_fifo < 1){
+      printf("Error opening pipe.");
+   }
+ 
    // Main While Loop
    while(server_status){
 
@@ -131,9 +136,6 @@ int main(int argc, char **argv){
          if(strncmp(S_COMMAND_READ, command_line, 5) == 0){
 
 
-            if(server_fifo < 1){
-               printf("Error opening pipe.");
-            }
             printf("File Opened\n");
             memset(command_line, 0 , MESSAGE_SIZE);
             read(server_fifo, command_line, sizeof(command_line));

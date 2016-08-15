@@ -31,7 +31,7 @@ int main(int argc, char *argv[]){
 
    char* groupID;
    char* clientID;
-   char* command_line;
+   char command_line[MESSAGE_SIZE];
 
    char message[MESSAGE_SIZE] = "TestMessage\n";
 
@@ -62,12 +62,12 @@ int main(int argc, char *argv[]){
          
          if(strncmp(C_COMMAND_GROUP,command_line, 5) == 0){
 
-            server_fifo = open(SERVER_PIPE, O_WRONLY);
+            server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_WRONLY);
             if(server_fifo < 0){
                printf("Error opening pipe.\n");
             }
 
-            write(server_fifo, message, sizeof(message));
+            write(server_fifo, &message, sizeof(message));
             printf("Wrote to file.\n");
             close(server_fifo);
          }
