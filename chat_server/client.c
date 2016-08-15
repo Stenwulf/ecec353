@@ -60,7 +60,26 @@ int main(int argc, char *argv[]){
       clientID = argv[2];
       sprintf(message, "/g %s /u %s", clientID, groupID);
    }
-  
+
+   FILE* c2s;
+   char clientfifo[MESSAGE_SIZE];
+   int status;
+   struct stat st; 
+   strcpy(clientfifo, clientID);
+   
+   prepend(clientfifo,"./");
+   if(stat(clientfifo, &st) != 0){
+      status = mkfifo(clientfifo, 0666);
+      if(status!=0){
+         printf("Error: Server Pipe could not be created.\n");
+         return -1;
+      }
+   }
+   c2s = fopen(clientfifo, "r+");
+
+
+
+
    client_status = 1;
 
    while(client_status){

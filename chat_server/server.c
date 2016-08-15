@@ -48,7 +48,6 @@ int main(int argc, char **argv){
    struct stat st;
    dev_t dev;
 
-   struct pollfd mypoll = {STDIN_FILENO, POLLIN|POLLPRI};
 
    // Intialize Characters
    char command_line[MESSAGE_SIZE];
@@ -134,9 +133,10 @@ int main(int argc, char **argv){
    // Main While Loop
    while(server_status){
 
-      if(poll(&mypoll, 1, 5000))
+      struct pollfd mypoll = {STDIN_FILENO, POLLIN|POLLPRI};
+      if(poll(&mypoll, 2, 1000))
       {
-         printf("CYCLES: %d\n", j);
+         printf("CYCLES WRITE: %d\n", j);
          // Check for commands
          fgets(command_line, MESSAGE_SIZE, stdin);
 
@@ -157,6 +157,7 @@ int main(int argc, char **argv){
       }
       else
       {
+         printf("CYCLES READ: %d\n", j);
             fread(command_line, sizeof(command_line), 1, server_fifo);
             printf("Command Received: %s\n",command_line);
 
@@ -171,6 +172,7 @@ int main(int argc, char **argv){
             strcpy(cmd_line_split, command_line);
             
             token_ptr = strtok(cmd_line_split," ");
+            printf("TP: %s\n", token_ptr);
 
             struct group_context Group1;
 
