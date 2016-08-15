@@ -82,14 +82,21 @@ int main(int argc, char **argv){
    //
    //    group_list[0][0] = "Member 0 of group 0"
 
-   char ***group_members = calloc(GROUP_MAX, sizeof(***group_members));
+
+//OLD CODE DONT USE
+   //char ***group_members = calloc(GROUP_MAX, sizeof(***group_members));
+   //for(i = 0; i < CLIENT_MAX; i++){
+   //   group_members[i] = calloc(CLIENT_MAX, sizeof(char*));
+   //}
+   //for(i = 0; i < CLIENT_MAX; i++){
+   //   for(j = 0; j < CLIENT_MAX; j++){
+   //      group_members[i][j] = calloc( MESSAGE_SIZE, sizeof(char*));
+   //   }
+   //}
+
+   char **group_members = calloc(GROUP_MAX, MESSAGE_SIZE*sizeof(char));
    for(i = 0; i < CLIENT_MAX; i++){
-      group_members[i] = calloc(CLIENT_MAX, sizeof(char*));
-   }
-   for(i = 0; i < CLIENT_MAX; i++){
-      for(j = 0; j < CLIENT_MAX; j++){
-         group_members[i][j] = calloc(MESSAGE_SIZE, sizeof(char*));
-      }
+      group_members[i] = calloc(CLIENT_MAX, MESSAGE_SIZE* sizeof(char*));
    }
 
    // Setup FIFO File as a pipe if it doesn't exist
@@ -142,60 +149,98 @@ int main(int argc, char **argv){
             printf("Command Received: %s\n",command_line);
 
 
-            char cmd_line_split[MESSAGE_SIZE];
-            char *p;
+	    char cmd_line_split[MESSAGE_SIZE];
+            char New_Message[MESSAGE_SIZE];
+            char *token_ptr;
             int clientListID, groupUsageID;
             int compare_test;
             
+
             strcpy(cmd_line_split, command_line);
             
-            p = strtok(cmd_line_split," ");
+            token_ptr = strtok(cmd_line_split," ");
 
             struct group_context Group1;
 
-            while( p!= NULL){
-               if(strncmp("/u", p, 2) == 0){
-                  p = strtok(NULL, " ,");
+            while( token_ptr!= NULL){
+            compare_test = 0;
+               if(strcmp("/u", token_ptr) == 0){
+                  token_ptr = strtok(NULL, " ,");
                   //strcpy(Group1.client_id, p);
                   for(i = 0; i < CLIENT_MAX; i++){
+                     if(strcmp(client_list[i], token_ptr) == 0){ 
+                        goto bad_username;
+                     }
+                  }
+                  for(i = 0; i < CLIENT_MAX; i++){
                      if(*client_list[i] == 0){
-                         client_list[i] = p;
-                         clientListID = i;
-                         break;
+                        strcpy(client_list[i],token_ptr);
+                        clientListID = i;
+                        break;
                      }
                      //NEED CONDITION FOR MORE THAN 10 people to send back
                   
-                  }    
+                  }
+    
                }
-               else if(strncmp("/g", p, 2) == 0){
-                  p = strtok(NULL, " ,");
+               else if(strcmp("/g", token_ptr) == 0){
+                  token_ptr = strtok(NULL, " ,");
                   //strcpy(Group1.group_id, p);
                   for(i = 0; i < GROUP_MAX; i++){
-                     if(strncmp(group_usage[i], p, sizeof(group_usage[i])) == 0){  
-                        *group_members[i][clientListID] = 1;
-                        int compare_test = 1;
+                     if(strcmp(group_usage[i], token_ptr) == 0){ 
+                        group_members[i][clientListID] = 1;
+                        compare_test = 1;
                         break;
                      }
                   }
                   if (compare_test != 1){
                      for(i = 0; i < GROUP_MAX; i++){
                         if(*group_usage[i] == 0){
-                           group_usage[i] = p;
+                           strcpy(group_usage[i],token_ptr);
                            groupUsageID = i;
-                           *group_members[groupUsageID][clientListID] = 1;
+                           group_members[groupUsageID][clientListID] = 1;
                            break;
                         }
                      }
                   }
+                 
                }
-               p = strtok(NULL, " ,");
+               else if(strcmp("/t", token_ptr) == 0){
+                  printf("%s\n",command_line);
+                  token_ptr = strtok(NULL, " ");
+                  if(strcmp("/w", token_ptr) == 0){
+                    //WRITE FUNCTION TO HANDLE WHISPER
+                    //Need to delete last element and handle "blank" msgs
+                     token_ptr = strtok(NULL, " ,");
+                     char* ToUser;
+                     strcpy(ToUser, token_ptr);
+                     token_ptr = strtok(NULL, " ,");
+                     while( token_ptr!= NULL){
+                        strcpy(New_Message, token_ptr);
+                        strcpy(" ", token_ptr);
+                        token_ptr = strtok(NULL, " ,");
+                     }
+                  }
+                  else
+                  {
+                     while( token_ptr!= NULL){
+                        strcpy(New_Message, token_ptr);
+                        strcpy(" ", token_ptr);
+                        token_ptr = strtok(NULL, " ,");
+                     }
+ 
+                  }
+                 
+               }
+
+
+               token_ptr = strtok(NULL, " ,");
             }
          }   
          fflush(stdin);
+	 
       }
    }
-
-   
 
    // ---- Testing -----
    struct group_context test_context;
@@ -205,12 +250,21 @@ int main(int argc, char **argv){
   //   group_usage[0] = 1;
  //  }
 
-   printf("%d\n",*group_members[0][0]);
+   printf("%d\n",group_members[0][0]);
+   printf("%d\n",group_members[0][1]);
+   printf("%d\n",group_members[1][0]);
+   printf("%d\n",group_members[1][1]);
+   printf("%d\n",group_members[2][0]);
    printf("%s\n",group_usage[0]);
+   printf("%s\n",group_usage[1]);
+   printf("%s\n",group_usage[2]);
    free(client_list);
    free(group_usage);
    //free(group_members);
 
+//GOTO STATEMENT
+   bad_username:
+   //send message to client to exit gracefuly and pick a different username
 
 
    return 0;
@@ -229,3 +283,5 @@ void print_commands(){
 
    return;
 }
+
+

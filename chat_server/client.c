@@ -20,6 +20,18 @@
 
 #include "chat.h"
 
+void prepend(char* s, const char* t)
+{
+    size_t len = strlen(t);
+    size_t i;
+
+    memmove(s + len, s, strlen(s) + 1);
+
+    for (i = 0; i < len; ++i)
+    {
+        s[i] = t[i];
+    }
+}
 
 int main(int argc, char *argv[]){
  
@@ -33,7 +45,7 @@ int main(int argc, char *argv[]){
    char* clientID;
    char command_line[MESSAGE_SIZE];
 
-   char message[MESSAGE_SIZE] = "/g coolgroup /u userName\n";
+   char message[MESSAGE_SIZE] = "/g Group1 /u Name2";
 
    int server_fifo;
 
@@ -59,17 +71,29 @@ int main(int argc, char *argv[]){
             printf("Closing Server.\n");
             client_status = 0;
          }
-         
-         if(strncmp(C_COMMAND_GROUP,command_line, 5) == 0){
+         else if(strncmp(C_COMMAND_GROUP,command_line, 5) == 0){
 
             server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_WRONLY);
             if(server_fifo < 0){
                printf("Error opening pipe.\n");
             }
-
-            write(server_fifo, &message, sizeof(message));
-            printf("Wrote to file.\n");
-            close(server_fifo);
+            else{
+               write(server_fifo, &message, sizeof(message));
+               printf("Wrote to file.\n");
+               close(server_fifo);
+           }
+         }
+         else{
+            server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_WRONLY);
+            if(server_fifo < 0){
+               printf("Error opening pipe.\n");
+            }
+            else{
+               prepend(command_line,"/t ");
+               write(server_fifo, &command_line, sizeof(command_line));
+               printf("Wrote to file.\n");
+               close(server_fifo);
+           }
          }
 
       } 
@@ -79,3 +103,6 @@ int main(int argc, char *argv[]){
    return 0;
    
 }
+
+
+
