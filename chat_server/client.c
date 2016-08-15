@@ -45,7 +45,7 @@ int main(int argc, char *argv[]){
    char* clientID;
    char command_line[MESSAGE_SIZE];
 
-   char message[MESSAGE_SIZE] = "/g Group1 /u Name2";
+   char message[MESSAGE_SIZE]; 
 
    int server_fifo;
 
@@ -58,30 +58,31 @@ int main(int argc, char *argv[]){
    else {
       groupID = argv[1];
       clientID = argv[2];
+      sprintf(message, "/g %s /u %s", clientID, groupID);
    }
   
    client_status = 1;
 
    while(client_status){
-   
+
+      server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_WRONLY);
+      if(server_fifo < 0){
+         printf("The server is not currently online, exiting.\n");
+         exit(1);
+      }
+      else{
+         write(server_fifo, &message, sizeof(message));
+         printf("Sent client informtion, group %s and user %s to server.\n", groupID, clientID);
+         close(server_fifo);
+      }
+
+
       if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
 
          // Exit Command
          if(strncmp(C_COMMAND_EXIT,command_line, 5) == 0){
             printf("Closing Server.\n");
             client_status = 0;
-         }
-         else if(strncmp(C_COMMAND_GROUP,command_line, 5) == 0){
-
-            server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_WRONLY);
-            if(server_fifo < 0){
-               printf("Error opening pipe.\n");
-            }
-            else{
-               write(server_fifo, &message, sizeof(message));
-               printf("Wrote to file.\n");
-               close(server_fifo);
-           }
          }
          else{
             server_fifo = open(SERVER_PIPE, O_NONBLOCK | O_WRONLY);

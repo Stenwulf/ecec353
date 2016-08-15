@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <poll.h>
+
 #include "chat.h"
 
 #define CLIENT_MAX 10
@@ -45,6 +47,8 @@ int main(int argc, char **argv){
 
    struct stat st;
    dev_t dev;
+
+   struct pollfd mypoll = {STDIN_FILENO, POLLIN|POLLPRI};
 
    // Intialize Characters
    char command_line[MESSAGE_SIZE];
@@ -124,27 +128,35 @@ int main(int argc, char **argv){
    }
    
    server_fifo = fopen(SERVER_PIPE, "r+");
-  
+ 
+   j =0;
+ 
    // Main While Loop
    while(server_status){
 
-      // Check for commands
-      if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
+      if(poll(&mypoll, 1, 5000))
+      {
+         printf("CYCLES: %d\n", j);
+         // Check for commands
+         fgets(command_line, MESSAGE_SIZE, stdin);
 
-         // Exit Command
-         if(strncmp(S_COMMAND_EXIT,command_line, 5) == 0){
-            printf("Closing Server.\n");
-            server_status = 0;
-            unlink(SERVER_PIPE);
-         }
+            // Exit Command
+            if(strncmp(S_COMMAND_EXIT,command_line, 5) == 0){
+               printf("Closing Server.\n");
+               server_status = 0;
+               unlink(SERVER_PIPE);
+               break;
+            }
          
          // Help Command
-         if(strncmp(S_COMMAND_HELP,command_line, 5) == 0){
-            print_commands();
-         }
+            if(strncmp(S_COMMAND_HELP,command_line, 5) == 0){
+               print_commands();
+            }
 
-         if(strncmp(S_COMMAND_READ, command_line, 5) == 0){
-
+            fflush(stdin);
+      }
+      else
+      {
             fread(command_line, sizeof(command_line), 1, server_fifo);
             printf("Command Received: %s\n",command_line);
 
@@ -232,16 +244,12 @@ int main(int argc, char **argv){
                   }
                  
                }
-
-
                token_ptr = strtok(NULL, " ,");
             }
-         }   
-         fflush(stdin);
-	 
+         	 
       }
+   j++;
    }
-
    // ---- Testing -----
    struct group_context test_context;
   // test_context.group_id = "teststring\n";
