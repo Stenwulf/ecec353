@@ -399,7 +399,9 @@ void close_ClientFifo(char* clientID, int write_desc, int read_desc){
    printf("Closing Read Pipe: %s\n", client_write_pipe);
    close(read_desc);
    unlink(client_read_pipe);
-         
+   
+
+   printf("------------------------------------\n\n");     
    return;
 }
 
