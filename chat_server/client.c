@@ -15,6 +15,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 #include <unistd.h>
 
 #include "chat.h"
@@ -28,6 +29,8 @@ int main(int argc, char *argv[]){
    int i;
    int j;
    int client_status;
+   int server_fifo_status;
+   int stdin_status;
 
    // Command Line Args
    char* groupID;
@@ -39,6 +42,12 @@ int main(int argc, char *argv[]){
 
    int server_fifo;
 
+   fd_set stdin_set;
+   fd_set server_fifo_write;
+
+   struct timeval read_timeout;
+   read_timeout.tv_sec = 0;
+   read_timeout.tv_usec = 10000;
 
    // Get group and client ID from command line
    if (argc != 3) {
@@ -61,15 +70,21 @@ int main(int argc, char *argv[]){
    else{
       build_JoinGroup(command_line,clientID,groupID);
       write(server_fifo, command_line, MESSAGE_SIZE*sizeof(char));
-      memset(command_line, 0, MESSAGE_SIZE);
+      //memset(command_line, 0, MESSAGE_SIZE);
    }
 
+   printf("Client: %s. Connected to Group: %s.\n", clientID, groupID);
    while(client_status){
-   
-      if(fgets(command_line, MESSAGE_SIZE, stdin) != NULL){
+      
 
+      stdin_set = set_FileSelect_Clear(STDIN_FILENO);
+      stdin_status = select(STDIN_FILENO+1, &stdin_set, NULL, NULL, &read_timeout);
+      
+      if(FD_ISSET(STDIN_FILENO, &stdin_set)){
+         // Get input
+         fgets(command_line, MESSAGE_SIZE, stdin);
          // Exit Command
-         if(strncmp(C_COMMAND_EXIT,command_line, 5) == 0){
+         if(strncmp(C_COMMAND_EXIT,command_line, 2) == 0){
             printf("Closing Server.\n");
             client_status = 0;
             close(server_fifo);
@@ -79,7 +94,7 @@ int main(int argc, char *argv[]){
          }
          
          // Join Group Command
-         if(strncmp(C_COMMAND_GROUP,command_line, 5) == 0){
+         if(strncmp(C_COMMAND_GROUP,command_line, 2) == 0){
             printf("%s\n",command_line);
             write(server_fifo, command_line, MESSAGE_SIZE*sizeof(char));
             printf("Wrote to file.\n");
@@ -106,3 +121,4 @@ void build_JoinGroup(char* command_line, char* clientID, char* groupID){
    strcat(command_line,"|");
    strcat(command_line,groupID);
 }
+
