@@ -22,6 +22,7 @@
 
 // Command Building Prototypes
 void build_JoinGroup(char* command_line, char* clientID, char* groupID);
+void build_WaitingForConnection(char* command_line);
 
 int main(int argc, char *argv[]){
  
@@ -44,6 +45,10 @@ int main(int argc, char *argv[]){
 
    fd_set stdin_set;
    fd_set server_fifo_write;
+
+   struct timeval join_rest;
+   join_rest.tv_sec = 0;
+   join_rest.tv_usec = 100;
 
    struct timeval read_timeout;
    read_timeout.tv_sec = 0;
@@ -70,6 +75,11 @@ int main(int argc, char *argv[]){
    else{
       build_JoinGroup(command_line,clientID,groupID);
       write(server_fifo, command_line, MESSAGE_SIZE*sizeof(char));
+
+      //select(0, NULL, NULL, NULL, &join_rest);
+     
+      //build_WaitingForConnection(command_line);
+      //write(server_fifo, command_line, MESSAGE_SIZE*sizeof(char));
       //memset(command_line, 0, MESSAGE_SIZE);
    }
 
@@ -114,11 +124,16 @@ void build_JoinGroup(char* command_line, char* clientID, char* groupID){
    memset(command_line, 0, MESSAGE_SIZE);
 
    // Add command to head
-   strcpy(command_line,"g|");
+   strcpy(command_line,COMMAND_JOIN);
 
    // Add client and group to string
    strcat(command_line,clientID);
-   strcat(command_line,"|");
+   strcat(command_line,COMMAND_DELIM);
+
    strcat(command_line,groupID);
 }
 
+void build_WaitingForConnection(char* command_line){
+   memset(command_line, 0, MESSAGE_SIZE);
+   strcpy(command_line,J_CLIENT_CONN);
+}

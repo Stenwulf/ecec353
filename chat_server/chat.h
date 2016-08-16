@@ -1,16 +1,25 @@
 #ifndef CHAT_H
 #define CHAT_H
-
+// Max message size
 #define MESSAGE_SIZE         1024
-
+// Pipe Constants
 #define SERVER_PIPE          "./serverfifo"
+#define R_PIPE_CONSTRUCT     "_r"
+#define W_PIPE_CONSTRUCT     "_w"
 #define S_PIPE_PERMISSIONS   0777
 
+// Command Delimiter
+//#define COMMAND_DELIM        " xx "
+#define COMMAND_JOIN         "j|"
+#define EMPTY_CLIENT         "empty"
+// Server Command Input
 #define S_COMMAND_EXIT       "/exit"
 #define S_COMMAND_HELP       "/help"
 #define S_COMMAND_READ       "/read"
-#define S_CLIENT_GROUP       "g"
-
+// Join Group
+#define J_CLIENT_GROUP       "j"
+#define J_CLIENT_CONN        "..."
+//Client Command Inputs
 #define C_COMMAND_EXIT       "/x"
 #define C_COMMAND_GROUP      "/g"
 
@@ -47,6 +56,8 @@ struct command_token{
 };
 
 int connect_ServerPipe();
+
+static char* COMMAND_DELIM = "|";
 
 fd_set set_FileSelect_Clear(int filedesc);
 fd_set set_FileSelect_NoClear(fd_set fds, int filedesc);
