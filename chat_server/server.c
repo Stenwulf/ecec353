@@ -175,18 +175,19 @@ int main(int argc, char **argv){
 
             // Create Group
             for(i = 0; i < GROUP_MAX; i++){
+               group_id_index = i;
                if(strcmp(group_list[i], command_token) == 0){break;}
                if(strcmp(group_list[i], EMPTY_CLIENT) == 0){
                   printf("Adding group |%s| to group list at position |%d|.\n", command_token, i);
                   strcpy(group_list[i], command_token);
-                  group_id_index = i;
                   break;
                }
 
             } 
            
             // Adding to Group Member List
-
+            // Commented Version copies 1 instead of client_id name
+            //group_members[group_id_index][client_id_index] = 1;
             strcpy(group_members[group_id_index][client_id_index],client_list[client_id_index]);
  
             // Wait for disconnect mesage
