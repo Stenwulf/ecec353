@@ -37,9 +37,13 @@ int main(int argc, char *argv[]){
    char* groupID;
    char* clientID;
 
+<<<<<<< HEAD
    // Command Messages
    char* command_line = (char*)calloc(MESSAGE_SIZE, sizeof(char));
    char* command_message = (char*)calloc(MESSAGE_SIZE, sizeof(char));
+=======
+   char message[MESSAGE_SIZE] = "/g coolgroup /u userName\n";
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
 
    int server_fifo;
 

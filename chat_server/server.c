@@ -53,9 +53,14 @@ int main(int argc, char **argv){
    int server_read;
    int stdin_read;
 
+<<<<<<< HEAD
    // Intalize Client Index Ints
    int client_id_index;
    int group_id_index;
+=======
+   struct stat st;
+   dev_t dev;
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
 
    // Select Parameters
    fd_set s_read_set;
@@ -70,9 +75,13 @@ int main(int argc, char **argv){
    char* fifo_pipe = (char*)calloc(MESSAGE_SIZE, sizeof(char));
 
    // Initialize Files
+<<<<<<< HEAD
    int server_fifo;
    int* w_client_pipe = (int*)calloc(CLIENT_MAX, sizeof(int));
    int* r_client_pipe = (int*)calloc(CLIENT_MAX, sizeof(int));
+=======
+   FILE* server_fifo;
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
 
    // Intialize Client List Array
    //    Can be accessed using standard array notatiom
@@ -88,6 +97,7 @@ int main(int argc, char **argv){
    //    Maintains a list of integers indicating which group slots are
    //    available.
 
+<<<<<<< HEAD
    char** group_list = (char**)calloc(GROUP_MAX, sizeof(char*));
    for(i = 0; i < GROUP_MAX; i++){
       group_list[i] = calloc(MESSAGE_SIZE, sizeof(char));
@@ -97,6 +107,14 @@ int main(int argc, char **argv){
    int *group_usage = (int*)calloc(CLIENT_MAX, sizeof(int));
    for(i = 0; i < CLIENT_MAX; i++){
       //strcpy(group_usage[i], EMPTY_CLIENT);
+=======
+   //int *group_usage = (char*)calloc(CLIENT_MAX, sizeof(int));
+   char **group_usage = (char**)calloc(CLIENT_MAX, sizeof(char*));
+   for(i = 0; i < CLIENT_MAX; i++){
+      //group_usage[i] = 0;
+        group_usage[i] = (char*)calloc(MESSAGE_SIZE, sizeof(char*));
+
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
    }    
 
    // Initalize Group Memember list
@@ -126,6 +144,7 @@ int main(int argc, char **argv){
          printf("Error: Server Pipe could not be created.\n");
          return -1;
       }
+<<<<<<< HEAD
       else{
          printf("Pipe Opened");
       }
@@ -139,11 +158,27 @@ int main(int argc, char **argv){
    // Setup Select Parameters
    read_timeout.tv_sec = 0;
    read_timeout.tv_usec = 50000;
+=======
+   } 
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
+
+   
 
    // Set server status to run and print commands
    server_status = 1;
    print_commands();   
+<<<<<<< HEAD
  
+=======
+
+   //server_fifo = (FILE*)open(SERVER_PIPE, O_RDONLY);
+   if(server_fifo == NULL){
+      printf("Failed to open file.\n");
+   }
+   
+   server_fifo = fopen(SERVER_PIPE, "r+");
+  
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
    // Main While Loop
    while(server_status){
 		
@@ -269,9 +304,12 @@ int main(int argc, char **argv){
          if(strncmp(S_COMMAND_EXIT,command_line, strlen(S_COMMAND_EXIT)) == 0){
             printf("Closing Server.\n");
             server_status = 0;
+<<<<<<< HEAD
 
             // Destroy Pipe
             close(server_fifo);
+=======
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
             unlink(SERVER_PIPE);
 
             // Destroy Client Pipes
@@ -287,6 +325,7 @@ int main(int argc, char **argv){
             print_commands();
          }
 
+<<<<<<< HEAD
          // Read Command
          if(strncmp(S_COMMAND_READ, command_line, strlen(S_COMMAND_READ)) == 0){
 
@@ -296,6 +335,63 @@ int main(int argc, char **argv){
             printf("Command: %s\n", command_line);
          }
          
+=======
+         if(strncmp(S_COMMAND_READ, command_line, 5) == 0){
+
+            fread(command_line, sizeof(command_line), 1, server_fifo);
+            printf("Command Received: %s\n",command_line);
+
+
+            char cmd_line_split[MESSAGE_SIZE];
+            char *p;
+            int clientListID, groupUsageID;
+            int compare_test;
+            
+            strcpy(cmd_line_split, command_line);
+            
+            p = strtok(cmd_line_split," ");
+
+            struct group_context Group1;
+
+            while( p!= NULL){
+               if(strncmp("/u", p, 2) == 0){
+                  p = strtok(NULL, " ,");
+                  //strcpy(Group1.client_id, p);
+                  for(i = 0; i < CLIENT_MAX; i++){
+                     if(*client_list[i] == 0){
+                         client_list[i] = p;
+                         clientListID = i;
+                         break;
+                     }
+                     //NEED CONDITION FOR MORE THAN 10 people to send back
+                  
+                  }    
+               }
+               else if(strncmp("/g", p, 2) == 0){
+                  p = strtok(NULL, " ,");
+                  //strcpy(Group1.group_id, p);
+                  for(i = 0; i < GROUP_MAX; i++){
+                     if(strncmp(group_usage[i], p, sizeof(group_usage[i])) == 0){  
+                        *group_members[i][clientListID] = 1;
+                        int compare_test = 1;
+                        break;
+                     }
+                  }
+                  if (compare_test != 1){
+                     for(i = 0; i < GROUP_MAX; i++){
+                        if(*group_usage[i] == 0){
+                           group_usage[i] = p;
+                           groupUsageID = i;
+                           *group_members[groupUsageID][clientListID] = 1;
+                           break;
+                        }
+                     }
+                  }
+               }
+               p = strtok(NULL, " ,");
+            }
+         }   
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
          fflush(stdin);
       }
      
@@ -306,6 +402,7 @@ int main(int argc, char **argv){
 
    // ---- Testing -----
    struct group_context test_context;
+<<<<<<< HEAD
    test_context.group_id = "teststring\n";
    //if(group_usage[0] == 0){
      //group_members[0][0] = test_context.group_id;   
@@ -316,6 +413,17 @@ int main(int argc, char **argv){
    printf("%s\n",group_members[0][1]);
    printf("%d\n",group_usage[0]);
 //   free(client_list);
+=======
+  // test_context.group_id = "teststring\n";
+  // if(group_usage[0] == 0){
+  //   group_members[0][0] = test_context.group_id;   
+  //   group_usage[0] = 1;
+ //  }
+
+   printf("%d\n",*group_members[0][0]);
+   printf("%s\n",group_usage[0]);
+   free(client_list);
+>>>>>>> 05f54a13be1ced26e862bfed788476f34a7cd976
    free(group_usage);
    //free(group_members);
 
@@ -324,6 +432,8 @@ int main(int argc, char **argv){
    return 0;
 
 }
+
+
 
 // Print Commands
 //    Prints a list of the server commands
