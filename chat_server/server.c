@@ -33,9 +33,8 @@
  */
 
 void print_commands();
-int connect_ServerPipe();
-fd_set set_FileSelect_Server(int filedesc);
-fd_set set_FileSelect_STDIN();
+//fd_set set_FileSelect_Server(int filedesc);
+//fd_set set_FileSelect_STDIN();
 
 int main(int argc, char **argv){
  
@@ -118,14 +117,10 @@ int main(int argc, char **argv){
    // Connect to reading end of the server pipe
    server_fifo = connect_ServerPipe();
    printf("FIFO File Descripter: %d\n",server_fifo); 
+
    // Setup Select Parameters
    read_timeout.tv_sec = 0;
    read_timeout.tv_usec = 10000;
-
-   /*FD_ZERO(&s_read_set);
-   FD_SET(server_fifo, &s_read_set);*/
-
-//   s_read_set = set_FileSelect_Server(server_fifo);
 
    // Set server status to run and print commands
    server_status = 1;
@@ -133,8 +128,9 @@ int main(int argc, char **argv){
  
    // Main While Loop
    while(server_status){
-      
-      s_read_set = set_FileSelect_Server(server_fifo);
+		
+      // Set Server Read FIFO fd_set every run since it gets modified by select      
+      s_read_set = set_FileSelect_Clear(server_fifo);
       server_read = select(server_fifo + 1, &s_read_set, NULL, NULL, &read_timeout);
 
       if(FD_ISSET(server_fifo, &s_read_set)){
@@ -145,7 +141,7 @@ int main(int argc, char **argv){
      
 
       // STDIN Select for Input 
-      stdin_set = set_FileSelect_STDIN();
+      stdin_set = set_FileSelect_Clear(STDIN_FILENO);
       stdin_read = select(STDIN_FILENO + 1, &stdin_set, NULL, NULL, &read_timeout);
       // Check for commands from STDIN
       if(FD_ISSET(STDIN_FILENO, &stdin_set)){
@@ -155,9 +151,11 @@ int main(int argc, char **argv){
          if(strncmp(S_COMMAND_EXIT,command_line, 5) == 0){
             printf("Closing Server.\n");
             server_status = 0;
+
             // Destroy Pipe
             close(server_fifo);
             unlink(SERVER_PIPE);
+
             // Free MALLOCs
             free(command_line);
             free(fifo_pipe);
@@ -213,37 +211,8 @@ void print_commands(){
    printf("/help -- Prints this list of commands\n");
    printf("/exit -- Exits the server\n");
    printf("/read -- Test Command :: Read Line from FIFO\n");
+
    return;
 
 }
 
-int connect_ServerPipe(){
-   int val;
-   val = open(SERVER_PIPE, O_NONBLOCK | O_RDONLY);
-   if(val < 1){
-      printf("Error opening pipe.");
-   }
-   return val;
-}
-
-// Creates a file descriptor set to check server fifo for reading
-fd_set set_FileSelect_Server(int filedesc){
-
-   fd_set fds;
-
-   FD_ZERO(&fds);
-   FD_SET(filedesc, &fds);
-
-   return fds;
-}
-
-// Creates a file descriptor set to check STDIN for input
-fd_set set_FileSelect_STDIN(){
-
-   fd_set fds;
-
-   FD_ZERO(&fds);
-   FD_SET(STDIN_FILENO, &fds);
-
-   return fds;
-}

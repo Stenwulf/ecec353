@@ -3,6 +3,6 @@ then
         rm chat_server
 fi
 
-gcc -o chat_server server.c chat.h -std=c99 -lpthread 
+gcc -o chat_server server.c chat.c -std=c99 -lpthread 
 
 ./chat_server

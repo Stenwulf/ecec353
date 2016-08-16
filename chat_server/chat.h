@@ -46,4 +46,9 @@ struct command_token{
    char* contents;
 };
 
+int connect_ServerPipe();
+
+fd_set set_FileSelect_Clear(int filedesc);
+fd_set set_FileSelect_NoClear(fd_set fds, int filedesc);
+
 #endif
