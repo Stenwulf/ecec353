@@ -35,6 +35,9 @@
 void print_commands();
 int create_ServerFifo();
 int create_ClientFifo(char* pipe_name);
+
+void close_ClientFifo(char* clientID, int write_desc, int read_desc);
+void close_ClientFifo_All(char** client_list, int* write_pipes, int* read_pipes);
 //fd_set set_FileSelect_Server(int filedesc);
 //fd_set set_FileSelect_STDIN();
 
@@ -271,6 +274,9 @@ int main(int argc, char **argv){
             close(server_fifo);
             unlink(SERVER_PIPE);
 
+            // Destroy Client Pipes
+            close_ClientFifo_All(client_list, w_client_pipe, r_client_pipe);
+ 
             // Free MALLOCs
             free(command_line);
             free(fifo_pipe);
@@ -368,4 +374,44 @@ int create_ClientFifo(char* pipe_name){
          return status;
       }
    }
+}
+
+
+// Closes and unlinks a client fifo pair
+void close_ClientFifo(char* clientID, int write_desc, int read_desc){
+
+   printf("\n\n--- Closing Pipes for Client: %s ---\n", clientID);
+
+   //Make client write FIFO
+   char* client_write_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));
+   strcpy(client_write_pipe,clientID);
+   strcat(client_write_pipe,"_w");
+
+   printf("Closing Write Pipe: %s\n", client_write_pipe);
+   close(write_desc);
+   unlink(client_write_pipe);
+            
+   //Make client read FIFO
+   char* client_read_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));;
+   strcpy(client_read_pipe,clientID);
+   strcat(client_read_pipe,"_r");
+
+   printf("Closing Read Pipe: %s\n", client_write_pipe);
+   close(read_desc);
+   unlink(client_read_pipe);
+         
+   return;
+}
+
+// Closes all client fifo pairs
+void close_ClientFifo_All(char** client_list, int* write_pipes, int* read_pipes){
+
+   int i;
+   for(i = 0; i < CLIENT_MAX; i++){
+      if(strcmp(client_list[i],EMPTY_CLIENT) != 0){
+         close_ClientFifo(client_list[i], write_pipes[i], read_pipes[i]);
+      }
+   }
+   return;
+
 }
