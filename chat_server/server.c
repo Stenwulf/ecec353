@@ -49,6 +49,9 @@ int main(int argc, char **argv){
    int server_read;
    int stdin_read;
 
+   // Intalize Client Index Ints
+   int client_id_index;
+   int group_id_index;
 
    // Select Parameters
    fd_set s_read_set;
@@ -98,13 +101,14 @@ int main(int argc, char **argv){
    //
    //    group_list[0][0] = "Member 0 of group 0"
 
-   char ***group_members = calloc(GROUP_MAX, sizeof(***group_members));
+   char ***group_members = calloc(GROUP_MAX, MESSAGE_SIZE);
    for(i = 0; i < CLIENT_MAX; i++){
       group_members[i] = calloc(CLIENT_MAX, sizeof(char*));
    }
    for(i = 0; i < CLIENT_MAX; i++){
       for(j = 0; j < CLIENT_MAX; j++){
          group_members[i][j] = calloc(MESSAGE_SIZE, sizeof(char*));
+         strcpy(group_members[i][j], EMPTY_CLIENT);
       }
    }
 
@@ -161,6 +165,7 @@ int main(int argc, char **argv){
                if(strcmp(client_list[i], EMPTY_CLIENT) == 0){
                   printf("\nAdding Client |%s| to client list at position |%d|.\n",command_token, i);
                   strcpy(client_list[i], command_token);
+                  client_id_index = i;
                   break;
                }
             }
@@ -174,11 +179,16 @@ int main(int argc, char **argv){
                if(strcmp(group_list[i], EMPTY_CLIENT) == 0){
                   printf("Adding group |%s| to group list at position |%d|.\n", command_token, i);
                   strcpy(group_list[i], command_token);
+                  group_id_index = i;
                   break;
                }
 
             } 
-            
+           
+            // Adding to Group Member List
+
+            strcpy(group_members[group_id_index][client_id_index],client_list[client_id_index]);
+ 
             // Wait for disconnect mesage
             close(server_fifo);
             unlink(SERVER_PIPE);
@@ -238,12 +248,13 @@ int main(int argc, char **argv){
    // ---- Testing -----
    struct group_context test_context;
    test_context.group_id = "teststring\n";
-   if(group_usage[0] == 0){
-     group_members[0][0] = test_context.group_id;   
-     group_usage[0] = 1;
-   }
+   //if(group_usage[0] == 0){
+     //group_members[0][0] = test_context.group_id;   
+   //  group_usage[0] = 1;
+   //}
 
-   printf(group_members[0][0]);
+   printf("%s\n",group_members[0][0]);
+   printf("%s\n",group_members[0][1]);
    printf("%d\n",group_usage[0]);
 //   free(client_list);
    free(group_usage);
