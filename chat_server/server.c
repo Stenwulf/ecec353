@@ -34,6 +34,7 @@
 
 void print_commands();
 int create_ServerFifo();
+int create_ClientFifo(char* pipe_name);
 //fd_set set_FileSelect_Server(int filedesc);
 //fd_set set_FileSelect_STDIN();
 
@@ -67,8 +68,8 @@ int main(int argc, char **argv){
 
    // Initialize Files
    int server_fifo;
-   int* w_client_pipe = (int*)calloc(CLIENT_MAX, sizeof(int*));
-   int* r_client_pipe = (int*)calloc(CLIENT_MAX, sizeof(int*));
+   int* w_client_pipe = (int*)calloc(CLIENT_MAX, sizeof(int));
+   int* r_client_pipe = (int*)calloc(CLIENT_MAX, sizeof(int));
 
    // Intialize Client List Array
    //    Can be accessed using standard array notatiom
@@ -196,8 +197,26 @@ int main(int argc, char **argv){
             // Regenerate Fifo
             status = create_ServerFifo();
             server_fifo = connect_ServerPipe();
-            
 
+            printf("Generating Client FIFO.\n");
+
+            //Make client write FIFO
+            char* client_write_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));
+            strcpy(client_write_pipe,"w_");
+            strcat(client_write_pipe,client_list[client_id_index]);
+
+            printf("Attempting to Create Write Pipe: %s\n", client_write_pipe);
+            w_client_pipe[client_id_index] = create_ClientFifo(client_write_pipe);
+            
+            //Make client read FIFO
+            char* client_read_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));;
+            strcpy(client_read_pipe,"r_");
+            strcat(client_read_pipe,client_list[client_id_index]);
+
+            printf("Attempting to Create Write Pipe: %s\n", client_write_pipe);
+            r_client_pipe[client_id_index] = create_ClientFifo(client_read_pipe);
+            
+            
             
          }      
       }
@@ -292,7 +311,25 @@ int create_ServerFifo(){
          return -1;
       }
       else{
-         printf("Pipe Opened");
+         printf("Server Pipe Opened\n");
+         return status;
+      }
+   }
+}
+
+int create_ClientFifo(char* pipe_name){
+
+   struct stat st;
+   int status;
+
+   if(stat(pipe_name, &st) != 0){
+      status = mkfifo(pipe_name, 0666);
+      if(status != 0){
+         printf("Error: Client Pipe could not be created: %s\n", pipe_name);
+         return -1;
+      }
+      else{
+         printf("Client Pipe Opened: %s\n", pipe_name);
          return status;
       }
    }
