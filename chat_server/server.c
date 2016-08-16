@@ -144,6 +144,27 @@ int main(int argc, char **argv){
    // Main While Loop
    while(server_status){
 		
+
+      /* 
+       * ------------------- Server Master FIFO Block -------------------
+ 		 *
+       *    This block checks the server FIFO for write activity
+ 		 *    
+ 		 *    When a write is detected it checks for a valid group join request.
+ 		 *    The server adds the clientID to the following structures:
+ 		 *       client_list
+ 		 *       group_members
+ 		 *
+ 		 *    The server adds the groupID to the following structures:
+ 		 *       group_list
+ 		 *
+ 		 *    The server creates FIFO file descriptors for read and write in
+ 		 *    the following structures:
+ 		 *       w_client_pipe
+ 		 *       r_client_pipe
+ 		 *
+ 		 */
+
       // Set Server Read FIFO fd_set every run since it gets modified by select      
       s_read_set = set_FileSelect_Clear(server_fifo);
       server_read = select(server_fifo + 1, &s_read_set, NULL, NULL, &read_timeout);
@@ -202,26 +223,38 @@ int main(int argc, char **argv){
 
             //Make client write FIFO
             char* client_write_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));
-            strcpy(client_write_pipe,"w_");
-            strcat(client_write_pipe,client_list[client_id_index]);
+            strcpy(client_write_pipe,client_list[client_id_index]);
+            strcat(client_write_pipe,"_w");
 
             printf("Attempting to Create Write Pipe: %s\n", client_write_pipe);
             w_client_pipe[client_id_index] = create_ClientFifo(client_write_pipe);
             
             //Make client read FIFO
             char* client_read_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));;
-            strcpy(client_read_pipe,"r_");
-            strcat(client_read_pipe,client_list[client_id_index]);
+            strcpy(client_read_pipe,client_list[client_id_index]);
+            strcat(client_read_pipe,"_r");
 
             printf("Attempting to Create Write Pipe: %s\n", client_write_pipe);
             r_client_pipe[client_id_index] = create_ClientFifo(client_read_pipe);
             
-            
-            
          }      
       }
      
+      /* 
+       * ------------------- STDIN Detection Block -------------------
+ 		 *
+       *    This block checks the server STDIN  for write activity
+ 		 *   
+ 		 *    When write is detected for the server STDIN a series of
+ 		 *    if statements is executed to determine the correct action.
+ 		 *
+ 		 *    Exit - Closes the server
+ 		 *    Help - Prints commands to STDIN
+ 		 *    Read - Reads a line from the server FIFO 
+ 		 *
+ 		 */
 
+      
       // STDIN Select for Input 
       stdin_set = set_FileSelect_Clear(STDIN_FILENO);
       stdin_read = select(STDIN_FILENO + 1, &stdin_set, NULL, NULL, &read_timeout);
@@ -299,6 +332,7 @@ void print_commands(){
 
 }
 
+// Creates the master server fifo for connecting clients
 int create_ServerFifo(){
 
    struct stat st;
@@ -317,6 +351,7 @@ int create_ServerFifo(){
    }
 }
 
+// Generates generic FIFOs using a pipe name
 int create_ClientFifo(char* pipe_name){
 
    struct stat st;
