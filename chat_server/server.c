@@ -50,7 +50,8 @@ int main(int argc, char **argv){
    // Initialize loop iterators
    int i;
    int j;
- 
+   int k;
+
    // Initalize Status Indicators
    int status; 
    int server_status;
@@ -122,7 +123,7 @@ int main(int argc, char **argv){
    }
    for(i = 0; i < CLIENT_MAX; i++){
       for(j = 0; j < CLIENT_MAX; j++){
-         group_members[i][j] = calloc(MESSAGE_SIZE, sizeof(char*));
+         group_members[i][j] = calloc(MESSAGE_SIZE, sizeof(char));
          strcpy(group_members[i][j], EMPTY_CLIENT);
       }
    }
@@ -257,11 +258,12 @@ int main(int argc, char **argv){
             w_client_pipe[client_id_index] = create_ClientFifo(client_write_pipe); 
             // Connect to reading end of pipe
             //printf("Attempting to Read Client Write Pipe: %s\n", client_write_pipe);
-            w_client_pipe[client_id_index] = open(client_write_pipe, O_NONBLOCK, O_RDWR);//connect_ClientPipe_Server(client_write_pipe);
+            w_client_pipe[client_id_index] = open(client_write_pipe,  O_RDWR);//connect_ClientPipe_Server(client_write_pipe);
             //   sleep(1);
-            r_client_pipe[client_id_index] = open(client_write_pipe, O_NONBLOCK, O_RDWR);//;onnect_ClientPipe_Server(client_read_pipe);
+            r_client_pipe[client_id_index] = open(client_read_pipe,  O_RDWR);//;onnect_ClientPipe_Server(client_read_pipe);
 
-
+            printf("Client %s write pipe file: %d\n",client_list[client_id_index], w_client_pipe[client_id_index]);
+            printf("Client %s read pipe file: %d\n",client_list[client_id_index], r_client_pipe[client_id_index]);
             largest_fifo = largest_FileNum(w_client_pipe);
          }      
       }
@@ -269,18 +271,56 @@ int main(int argc, char **argv){
            
       pipe_r_set = set_ReadFifoSet(w_client_pipe);
       server_read = select(largest_fifo + 1, &pipe_r_set, NULL, NULL, &read_timeout);
-      if(FD_ISSET(w_client_pipe[0], &pipe_r_set)){
-         printf("Server Got Pipe Data on 0\n");
-         memset(command_line, 0, MESSAGE_SIZE);
-         read(w_client_pipe[0], command_line, MESSAGE_SIZE*sizeof(command_line));
-         printf("Client 0 Says: %s", command_line);
-      }
-      if(FD_ISSET(w_client_pipe[1], &pipe_r_set)){
-         printf("Server Got Pipe Data on 1\n");
-         memset(command_line, 0, MESSAGE_SIZE);
-         read(w_client_pipe[1], command_line, MESSAGE_SIZE*sizeof(command_line));
-         printf("Client 1 Says: %s", command_line);
+      for(i = 0; i < CLIENT_MAX; i++){
+         if(FD_ISSET(w_client_pipe[i], &pipe_r_set)){
+            printf("Server Got Pipe Data on %d file %d%\n", i, w_client_pipe[0]);
+            memset(command_line, 0, MESSAGE_SIZE);
+            read(w_client_pipe[i], command_line, MESSAGE_SIZE*sizeof(char));
+            printf("Client %d Says: %s",i , command_line);
 
+            command_token = strtok(command_line,COMMAND_DELIM);
+            if(strcmp(command_line,"gc") == 0){
+               printf("Got group message\n");
+               command_token = strtok(NULL, COMMAND_DELIM);
+               for(j = 0; j < GROUP_MAX; j++){
+                  if(strcmp(group_list[j], command_token) == 0){
+                     char broadcast[MESSAGE_SIZE];
+                     command_token = strtok(NULL, COMMAND_DELIM);
+                     strcpy(broadcast, command_token);
+                     strcat(broadcast," :: ");
+                     command_token = strtok(NULL, COMMAND_DELIM);
+                     strcat(broadcast, command_token);
+                     for(k = 0; k < CLIENT_MAX; k++){
+                        if(strcmp(group_members[j][k], EMPTY_CLIENT)!=0){
+                            printf("Found Client.\n");
+                            write(r_client_pipe[k], broadcast, MESSAGE_SIZE*sizeof(char)); 
+                        }
+                     }
+                  }
+               }   
+            }
+
+            if(strcmp(command_line,"w") == 0){
+               printf("Got whisper message\n");
+               command_token = strtok(NULL, COMMAND_DELIM);
+               for(j = 0; j < GROUP_MAX; j++){
+                  if(strcmp(group_list[j], command_token) == 0){
+                     char broadcast[MESSAGE_SIZE];
+                     command_token = strtok(NULL, COMMAND_DELIM);
+                     strcpy(broadcast, command_token);
+                     strcat(broadcast," :: ");
+                     command_token = strtok(NULL, COMMAND_DELIM);
+                     strcat(broadcast, command_token);
+                     for(k = 0; k < CLIENT_MAX; k++){
+                        if(strcmp(group_members[j][k], EMPTY_CLIENT)!=0){
+                            printf("Found Client.\n");
+                            write(r_client_pipe[k], broadcast, MESSAGE_SIZE*sizeof(char)); 
+                        }
+                     }
+                  }
+               }   
+            }
+         }       
       }
       /* 
        * ------------------- STDIN Detection Block -------------------
@@ -313,7 +353,15 @@ int main(int argc, char **argv){
             close(server_fifo);
             unlink(SERVER_PIPE);
 
+            strcpy(command_line, "xxxx");
             // Destroy Client Pipes
+            for(i = 0; i < CLIENT_MAX; i++){
+               if(r_client_pipe[i] > 0){
+                  server_write = write(r_client_pipe[i], command_line, MESSAGE_SIZE*sizeof(command_line));
+                  printf("Write Operation: %d\n",server_write);
+                  printf("File Desc: %d\n",r_client_pipe[i]);
+               }
+            }
             close_ClientFifo_All(client_list, w_client_pipe, r_client_pipe);
  
             // Free MALLOCs
@@ -334,30 +382,19 @@ int main(int argc, char **argv){
             read(w_client_pipe[0], command_line, MESSAGE_SIZE*sizeof(command_line));
             printf("Command: %s\n", command_line);
          }
+
+         if(strncmp("/write", command_line, strlen(S_COMMAND_READ)) == 0){
+
+            printf("File Opened\n");
+            //memset(command_line, 0 , MESSAGE_SIZE);
+            server_write = write(r_client_pipe[0], command_line, MESSAGE_SIZE*sizeof(char));
+            printf("Write: %d", server_write);
+         }
          
          fflush(stdin);
       }
       
    }
-
-   
-
-   // ---- Testing -----
-   struct group_context test_context;
-   test_context.group_id = "teststring\n";
-   //if(group_usage[0] == 0){
-     //group_members[0][0] = test_context.group_id;   
-   //  group_usage[0] = 1;
-   //}
-
-   printf("%s\n",group_members[0][0]);
-   printf("%s\n",group_members[0][1]);
-   printf("%d\n",group_usage[0]);
-//   free(client_list);
-   free(group_usage);
-   //free(group_members);
-
-
 
    return 0;
 
@@ -370,7 +407,7 @@ void print_commands(){
    printf("\n\nCommand List:\n");
    printf("/help -- Prints this list of commands\n");
    printf("/exit -- Exits the server\n");
-   printf("/read -- Test Command :: Read Line from FIFO\n");
+//   printf("/read -- Test Command :: Read Line from FIFO\n");
 
    return;
 
@@ -417,8 +454,11 @@ int create_ClientFifo(char* pipe_name){
 // Closes and unlinks a client fifo pair
 void close_ClientFifo(char* clientID, int write_desc, int read_desc){
 
+   int status;
    printf("\n\n--- Closing Pipes for Client: %s ---\n", clientID);
-   write(read_desc, "xxxx", MESSAGE_SIZE*sizeof(char));
+
+   status = write(read_desc, "xxxx", MESSAGE_SIZE*sizeof(char));
+   printf("Closing Client %s with write status %d\n", clientID, status);
    //Make client write FIFO
    char* client_write_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));
    strcpy(client_write_pipe,clientID);
@@ -437,7 +477,6 @@ void close_ClientFifo(char* clientID, int write_desc, int read_desc){
    close(read_desc);
    unlink(client_read_pipe);
    
-
    printf("------------------------------------\n\n");     
    return;
 }

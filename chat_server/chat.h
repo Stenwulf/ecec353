@@ -26,6 +26,11 @@
 
 #define PIPE_READONLY        33
 #define PIPE_WRITEONLY       44
+
+#define COMMAND_GCHAT         "gc|"
+#define COMMAND_WCHAT         "w|"
+#define COMMAND_CEXIT         "x|"
+
 // Group Context
 //    group_id - Containts the group id that the client will connect to
 //    client_id - Name/ID of the client that is connecting to the group
