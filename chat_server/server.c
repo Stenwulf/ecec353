@@ -35,9 +35,13 @@
 void print_commands();
 int create_ServerFifo();
 int create_ClientFifo(char* pipe_name);
+int largest_FileNum(int* read_pipes);
 
 void close_ClientFifo(char* clientID, int write_desc, int read_desc);
 void close_ClientFifo_All(char** client_list, int* write_pipes, int* read_pipes);
+
+
+fd_set set_ReadFifoSet(int* read_pipes);
 //fd_set set_FileSelect_Server(int filedesc);
 //fd_set set_FileSelect_STDIN();
 
@@ -51,7 +55,11 @@ int main(int argc, char **argv){
    int status; 
    int server_status;
    int server_read;
+   int server_write;
    int stdin_read;
+   int establishing;
+   int largest_fifo;
+
 
    // Intalize Client Index Ints
    int client_id_index;
@@ -62,11 +70,14 @@ int main(int argc, char **argv){
    fd_set stdin_set;
    fd_set write_set;
 
+   fd_set pipe_r_set;
+   fd_set pipe_w_set;
+
    struct timeval read_timeout;
    
    // Intialize Charactersi
    char* command_token;
-	char* command_line = (char*)calloc(MESSAGE_SIZE, sizeof(char));
+   char* command_line = (char*)calloc(MESSAGE_SIZE, sizeof(char));
    char* fifo_pipe = (char*)calloc(MESSAGE_SIZE, sizeof(char));
 
    // Initialize Files
@@ -133,7 +144,7 @@ int main(int argc, char **argv){
 
    // Connect to reading end of the server pipe
    status = create_ServerFifo();
-   server_fifo = connect_ServerPipe();
+   server_fifo = connect_ServerPipe_Read();
    printf("FIFO File Descripter: %d\n",server_fifo); 
 
    // Setup Select Parameters
@@ -146,27 +157,26 @@ int main(int argc, char **argv){
  
    // Main While Loop
    while(server_status){
-		
-
+      
       /* 
        * ------------------- Server Master FIFO Block -------------------
- 		 *
+       *
        *    This block checks the server FIFO for write activity
- 		 *    
- 		 *    When a write is detected it checks for a valid group join request.
- 		 *    The server adds the clientID to the following structures:
- 		 *       client_list
- 		 *       group_members
- 		 *
- 		 *    The server adds the groupID to the following structures:
- 		 *       group_list
- 		 *
- 		 *    The server creates FIFO file descriptors for read and write in
- 		 *    the following structures:
- 		 *       w_client_pipe
- 		 *       r_client_pipe
- 		 *
- 		 */
+       *
+       *    When a write is detected it checks for a valid group join request.
+       *    The server adds the clientID to the following structures:
+       *       client_list
+       *       group_members
+       *
+       *    The server adds the groupID to the following structures:
+       *       group_list
+       *
+       *    The server creates FIFO file descriptors for read and write in
+       *    the following structures:
+       *       w_client_pipe
+       *       r_client_pipe
+       *
+       */
 
       // Set Server Read FIFO fd_set every run since it gets modified by select      
       s_read_set = set_FileSelect_Clear(server_fifo);
@@ -211,51 +221,80 @@ int main(int argc, char **argv){
             } 
            
             // Adding to Group Member List
-            // Commented Version copies 1 instead of client_id name
-            //group_members[group_id_index][client_id_index] = 1;
+            //   Commented Version copies 1 instead of client_id name
+            //   group_members[group_id_index][client_id_index] = 1;
             strcpy(group_members[group_id_index][client_id_index],client_list[client_id_index]);
  
+            /*
+             * Create Client FIFO Block
+             *
+             * Generates Two FIFOs for reading and writing with client
+             * in the following structures:
+             *    w_client_pipe
+             *    r_client_pipe
+             *
+             **/
+
             // Wait for disconnect mesage
             close(server_fifo);
             unlink(SERVER_PIPE);
             // Regenerate Fifo
             status = create_ServerFifo();
-            server_fifo = connect_ServerPipe();
+            server_fifo = connect_ServerPipe_Read();
 
             printf("Generating Client FIFO.\n");
 
             //Make client write FIFO
             char* client_write_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));
-            strcpy(client_write_pipe,client_list[client_id_index]);
-            strcat(client_write_pipe,"_w");
-
-            printf("Attempting to Create Write Pipe: %s\n", client_write_pipe);
-            w_client_pipe[client_id_index] = create_ClientFifo(client_write_pipe);
+            build_ClientWrite_ID(client_write_pipe, client_list[client_id_index]);
             
             //Make client read FIFO
             char* client_read_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));;
-            strcpy(client_read_pipe,client_list[client_id_index]);
-            strcat(client_read_pipe,"_r");
+            build_ClientRead_ID(client_read_pipe, client_list[client_id_index]);
 
-            printf("Attempting to Create Write Pipe: %s\n", client_write_pipe);
+            // Create both pipes
             r_client_pipe[client_id_index] = create_ClientFifo(client_read_pipe);
-            
+            w_client_pipe[client_id_index] = create_ClientFifo(client_write_pipe); 
+            // Connect to reading end of pipe
+            //printf("Attempting to Read Client Write Pipe: %s\n", client_write_pipe);
+            w_client_pipe[client_id_index] = open(client_write_pipe, O_NONBLOCK, O_RDWR);//connect_ClientPipe_Server(client_write_pipe);
+            //   sleep(1);
+            r_client_pipe[client_id_index] = open(client_write_pipe, O_NONBLOCK, O_RDWR);//;onnect_ClientPipe_Server(client_read_pipe);
+
+
+            largest_fifo = largest_FileNum(w_client_pipe);
          }      
       }
-     
+
+           
+      pipe_r_set = set_ReadFifoSet(w_client_pipe);
+      server_read = select(largest_fifo + 1, &pipe_r_set, NULL, NULL, &read_timeout);
+      if(FD_ISSET(w_client_pipe[0], &pipe_r_set)){
+         printf("Server Got Pipe Data on 0\n");
+         memset(command_line, 0, MESSAGE_SIZE);
+         read(w_client_pipe[0], command_line, MESSAGE_SIZE*sizeof(command_line));
+         printf("Client 0 Says: %s", command_line);
+      }
+      if(FD_ISSET(w_client_pipe[1], &pipe_r_set)){
+         printf("Server Got Pipe Data on 1\n");
+         memset(command_line, 0, MESSAGE_SIZE);
+         read(w_client_pipe[1], command_line, MESSAGE_SIZE*sizeof(command_line));
+         printf("Client 1 Says: %s", command_line);
+
+      }
       /* 
        * ------------------- STDIN Detection Block -------------------
- 		 *
+       *
        *    This block checks the server STDIN  for write activity
- 		 *   
- 		 *    When write is detected for the server STDIN a series of
- 		 *    if statements is executed to determine the correct action.
- 		 *
- 		 *    Exit - Closes the server
- 		 *    Help - Prints commands to STDIN
- 		 *    Read - Reads a line from the server FIFO 
- 		 *
- 		 */
+       *   
+       *    When write is detected for the server STDIN a series of
+       *    if statements is executed to determine the correct action.
+       *
+       *    Exit - Closes the server
+       *    Help - Prints commands to STDIN
+       *    Read - Reads a line from the server FIFO 
+       *
+       */
 
       
       // STDIN Select for Input 
@@ -292,14 +331,13 @@ int main(int argc, char **argv){
 
             printf("File Opened\n");
             memset(command_line, 0 , MESSAGE_SIZE);
-            read(server_fifo, command_line, MESSAGE_SIZE*sizeof(command_line));
+            read(w_client_pipe[0], command_line, MESSAGE_SIZE*sizeof(command_line));
             printf("Command: %s\n", command_line);
          }
          
          fflush(stdin);
       }
-     
-     
+      
    }
 
    
@@ -362,6 +400,7 @@ int create_ClientFifo(char* pipe_name){
 
    struct stat st;
    int status;
+   int file_desc;
 
    if(stat(pipe_name, &st) != 0){
       status = mkfifo(pipe_name, 0666);
@@ -369,10 +408,8 @@ int create_ClientFifo(char* pipe_name){
          printf("Error: Client Pipe could not be created: %s\n", pipe_name);
          return -1;
       }
-      else{
-         printf("Client Pipe Opened: %s\n", pipe_name);
-         return status;
-      }
+      printf("FIFO Created: %s\n", pipe_name);
+      return status;
    }
 }
 
@@ -381,7 +418,7 @@ int create_ClientFifo(char* pipe_name){
 void close_ClientFifo(char* clientID, int write_desc, int read_desc){
 
    printf("\n\n--- Closing Pipes for Client: %s ---\n", clientID);
-
+   write(read_desc, "xxxx", MESSAGE_SIZE*sizeof(char));
    //Make client write FIFO
    char* client_write_pipe = (char*)calloc(MESSAGE_SIZE,sizeof(char));
    strcpy(client_write_pipe,clientID);
@@ -396,7 +433,7 @@ void close_ClientFifo(char* clientID, int write_desc, int read_desc){
    strcpy(client_read_pipe,clientID);
    strcat(client_read_pipe,"_r");
 
-   printf("Closing Read Pipe: %s\n", client_write_pipe);
+   printf("Closing Read Pipe: %s\n", client_read_pipe);
    close(read_desc);
    unlink(client_read_pipe);
    
@@ -417,3 +454,29 @@ void close_ClientFifo_All(char** client_list, int* write_pipes, int* read_pipes)
    return;
 
 }
+
+int largest_FileNum(int* read_pipes){
+   int i = 0;
+   int max = 0;
+   for(i = 0; i < CLIENT_MAX; i++){
+      if(read_pipes[i] > max){
+         max = read_pipes[i];
+      }
+
+   }
+   return max;
+}
+
+fd_set set_ReadFifoSet(int* read_pipes){
+   
+   int i;
+   fd_set read_all = set_FileSelect_Clear(read_pipes[0]);
+   for(i = 1; i < CLIENT_MAX; i++){
+      if(read_pipes[i] != 0){
+         read_all = set_FileSelect_NoClear(read_all,read_pipes[i]);
+      }
+   }
+   return read_all;
+
+}
+

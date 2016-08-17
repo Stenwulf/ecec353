@@ -23,6 +23,9 @@
 #define C_COMMAND_EXIT       "/x"
 #define C_COMMAND_GROUP      "/g"
 
+
+#define PIPE_READONLY        33
+#define PIPE_WRITEONLY       44
 // Group Context
 //    group_id - Containts the group id that the client will connect to
 //    client_id - Name/ID of the client that is connecting to the group
@@ -55,7 +58,13 @@ struct command_token{
    char* contents;
 };
 
-int connect_ServerPipe();
+void build_ClientWrite_ID(char* pipe_name, char* client_id);
+void build_ClientRead_ID(char* pipe_name, char* client_id);
+
+int connect_ServerPipe_Read();
+int connect_ClientPipe_Server(char* path);
+int connect_ClientPipe_Read(char* path);
+int connect_ClientPipe_Write(char* path);
 
 static char* COMMAND_DELIM = "|";
 
